@@ -163,10 +163,11 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
             let categories = allCategories.filter({ showEmpty || $0.emojis.count > 0 })
             let filteredCategories = self.filterCategoriesBySearchText(categories, searchText: text)
             
-            DispatchQueue.main.async {
-                guard self?.searchText.value == text else { return }
-                self?.emojiCategories = filteredCategories
-                self?.onEmojiCategoriesUpdated?()
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                guard self.searchText.value == text else { return }
+                self.emojiCategories = filteredCategories
+                self.onEmojiCategoriesUpdated?()
             }
         }
     }
