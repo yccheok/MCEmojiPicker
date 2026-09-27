@@ -79,26 +79,47 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
     /// Loaded once at init from the bundled cldrEmojiKeywords.json resource.
     /// Enables searching by aliases (e.g. "lettuce" → 🥬, "aubergine" → 🍆).
     private var cldrKeywords: [String: [String]] = {
-        var resourceName = "cldrEmojiKeywords"
+        var combinedKeywords: [String: [String]] = [:]
+        
+        // 1. Always load the base English CLDR keywords
+        if let url = Bundle.module.url(forResource: "cldrEmojiKeywords", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let decoded = try? JSONDecoder().decode([String: [String]].self, from: data) {
+            combinedKeywords = decoded
+        }
+        
+        // 2. Determine if a localized CLDR file should be loaded
+        var localizedResourceName: String?
         if let preferred = Locale.preferredLanguages.first {
             let locale = Locale(identifier: preferred)
             if locale.languageCode == "zh" {
                 let script = locale.scriptCode
                 let region = locale.regionCode
                 if script == "Hant" || region == "TW" || region == "HK" || region == "MO" {
-                    resourceName = "cldrEmojiKeywords-zh-Hant"
+                    localizedResourceName = "cldrEmojiKeywords-zh-Hant"
                 }
             } else if locale.languageCode == "th" {
-                resourceName = "cldrEmojiKeywords-th"
+                localizedResourceName = "cldrEmojiKeywords-th"
             }
         }
         
-        guard let url = Bundle.module.url(forResource: resourceName, withExtension: "json") ??
-                        Bundle.module.url(forResource: "cldrEmojiKeywords", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode([String: [String]].self, from: data)
-        else { return [:] }
-        return decoded
+        // 3. Merge localized keywords into the combined dictionary
+        if let resourceName = localizedResourceName,
+           let url = Bundle.module.url(forResource: resourceName, withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let decoded = try? JSONDecoder().decode([String: [String]].self, from: data) {
+            
+            for (emoji, keywords) in decoded {
+                if let existing = combinedKeywords[emoji] {
+                    // Use Set to ensure no duplicate keywords
+                    combinedKeywords[emoji] = Array(Set(existing + keywords))
+                } else {
+                    combinedKeywords[emoji] = keywords
+                }
+            }
+        }
+        
+        return combinedKeywords
     }()
 
     // MARK: - Initializers
