@@ -60,12 +60,12 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
     public var selectedEmoji = Observable<MCEmoji?>(value: nil)
     public var selectedEmojiCategoryIndex = Observable<Int>(value: 0)
     public var searchText = Observable<String>(value: "")
-    public var showEmptyEmojiCategories = false
-    public var emojiCategories: [MCEmojiCategory] {
-        let categories = allEmojiCategories.filter({ showEmptyEmojiCategories || $0.emojis.count > 0 })
-        guard !searchText.value.isEmpty else { return categories }
-        return filterCategoriesBySearchText(categories, searchText: searchText.value)
+    public var showEmptyEmojiCategories = false {
+        didSet {
+            updateEmojiCategories()
+        }
     }
+    public private(set) var emojiCategories: [MCEmojiCategory] = []
     
     // MARK: - Private Properties
 
@@ -91,6 +91,12 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
         selectedEmoji.bind { emoji in
             emoji?.incrementUsageCount()
         }
+        
+        searchText.bind { [weak self] _ in
+            self?.updateEmojiCategories()
+        }
+        
+        updateEmojiCategories()
     }
     
     // MARK: - Public Methods
@@ -137,6 +143,15 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
     }
 
     // MARK: - Private Methods
+
+    private func updateEmojiCategories() {
+        let categories = allEmojiCategories.filter({ showEmptyEmojiCategories || $0.emojis.count > 0 })
+        if searchText.value.isEmpty {
+            emojiCategories = categories
+        } else {
+            emojiCategories = filterCategoriesBySearchText(categories, searchText: searchText.value)
+        }
+    }
 
     private func filterCategoriesBySearchText(_ categories: [MCEmojiCategory], searchText: String) -> [MCEmojiCategory] {
         let lowercasedSearchText = searchText.lowercased()
