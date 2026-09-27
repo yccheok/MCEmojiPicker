@@ -49,6 +49,12 @@ final class MCEmojiPickerView: UIView {
     
     public var selectedEmojiCategoryTintColor = Constants.defaultSelectedEmojiCategoryTintColor
     
+    public var searchBarPlaceholder: String = "Search emojis..." {
+        didSet {
+            searchBar.placeholder = searchBarPlaceholder
+        }
+    }
+    
     // MARK: - Constants
     
     private enum Constants {
