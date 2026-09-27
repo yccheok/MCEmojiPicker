@@ -66,6 +66,17 @@ public final class MCEmojiPickerViewController: UIViewController {
         }
     }
     
+    /// Placeholder text for the search bar.
+    ///
+    /// The default value of this property is `"Search emojis..."`.
+    public var searchBarPlaceholder: String = "Search emojis..." {
+        didSet {
+            if isViewLoaded {
+                emojiPickerView.searchBarPlaceholder = searchBarPlaceholder
+            }
+        }
+    }
+    
     /// The view containing the anchor rectangle for the popover.
     public var sourceView: UIView? {
         didSet {
@@ -92,7 +103,12 @@ public final class MCEmojiPickerViewController: UIViewController {
     private var viewModel: MCEmojiPickerViewModelProtocol = MCEmojiPickerViewModel()
     private lazy var emojiPickerView: MCEmojiPickerView = {
         let categories = viewModel.emojiCategories.map { $0.type }
-        return MCEmojiPickerView(categoryTypes: categories, delegate: self)
+        let view = MCEmojiPickerView(categoryTypes: categories, delegate: self)
+        view.searchBarPlaceholder = searchBarPlaceholder
+        if let selectedEmojiCategoryTintColor = selectedEmojiCategoryTintColor {
+            view.selectedEmojiCategoryTintColor = selectedEmojiCategoryTintColor
+        }
+        return view
     }()
     
     // MARK: - Initializers
@@ -143,6 +159,9 @@ public final class MCEmojiPickerViewController: UIViewController {
         }
         viewModel.selectedEmojiCategoryIndex.bind { [unowned self] categoryIndex in
             self.emojiPickerView.updateSelectedCategoryIcon(with: categoryIndex)
+        }
+        viewModel.onEmojiCategoriesUpdated = { [weak self] in
+            self?.emojiPickerView.reloadData()
         }
     }
     
@@ -238,6 +257,14 @@ extension MCEmojiPickerViewController: MCEmojiPickerViewDelegate {
     
     func didChoiceEmoji(_ emoji: MCEmoji?) {
         viewModel.selectedEmoji.value = emoji
+    }
+
+    func didSearchTextChange(_ searchText: String) {
+        viewModel.updateSearchText(searchText)
+    }
+
+    func clearSearch() {
+        viewModel.clearSearch()
     }
 }
 

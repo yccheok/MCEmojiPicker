@@ -17,6 +17,9 @@ let package = Package(
             dependencies: [],
             path: "Sources/MCEmojiPicker",
             resources: [
+                .copy("Resources/cldrEmojiKeywords.json"),
+                .copy("Resources/cldrEmojiKeywords-zh-Hant.json"),
+                .copy("Resources/cldrEmojiKeywords-th.json"),
                 .copy("Resources/EmojiDefinitions/travellingAndPlaces.json"),
                 .copy("Resources/EmojiDefinitions/symbols.json"),
                 .copy("Resources/EmojiDefinitions/items.json"),
@@ -29,5 +32,5 @@ let package = Package(
         ),
         .executableTarget(name: "MCEmojiPickerJSON", dependencies: ["MCEmojiPicker"])
     ],
-    swiftLanguageVersions: [.v4_2]
+    swiftLanguageVersions: [.v5]
 )
