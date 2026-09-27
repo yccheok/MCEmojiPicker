@@ -34,6 +34,8 @@ protocol MCEmojiPickerViewModelProtocol {
     var selectedEmojiCategoryIndex: Observable<Int> { get set }
     /// The search text used to filter emojis.
     var searchText: Observable<String> { get set }
+    /// Called when the emoji categories have been updated (e.g. after search filtering).
+    var onEmojiCategoriesUpdated: (() -> Void)? { get set }
     /// Clears the selected emoji, setting to `nil`.
     func clearSelectedEmoji()
     /// Returns the number of categories with emojis.
@@ -60,6 +62,7 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
     public var selectedEmoji = Observable<MCEmoji?>(value: nil)
     public var selectedEmojiCategoryIndex = Observable<Int>(value: 0)
     public var searchText = Observable<String>(value: "")
+    public var onEmojiCategoriesUpdated: (() -> Void)?
     public var showEmptyEmojiCategories = false {
         didSet {
             updateEmojiCategories()
@@ -145,11 +148,26 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
     // MARK: - Private Methods
 
     private func updateEmojiCategories() {
-        let categories = allEmojiCategories.filter({ showEmptyEmojiCategories || $0.emojis.count > 0 })
-        if searchText.value.isEmpty {
-            emojiCategories = categories
-        } else {
-            emojiCategories = filterCategoriesBySearchText(categories, searchText: searchText.value)
+        let text = searchText.value
+        let showEmpty = showEmptyEmojiCategories
+        let allCategories = allEmojiCategories
+        
+        if text.isEmpty {
+            emojiCategories = allCategories.filter({ showEmpty || $0.emojis.count > 0 })
+            onEmojiCategoriesUpdated?()
+            return
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            let categories = allCategories.filter({ showEmpty || $0.emojis.count > 0 })
+            let filteredCategories = self.filterCategoriesBySearchText(categories, searchText: text)
+            
+            DispatchQueue.main.async {
+                guard self?.searchText.value == text else { return }
+                self?.emojiCategories = filteredCategories
+                self?.onEmojiCategoriesUpdated?()
+            }
         }
     }
 

@@ -144,8 +144,8 @@ public final class MCEmojiPickerViewController: UIViewController {
         viewModel.selectedEmojiCategoryIndex.bind { [unowned self] categoryIndex in
             self.emojiPickerView.updateSelectedCategoryIcon(with: categoryIndex)
         }
-        viewModel.searchText.bind { [unowned self] _ in
-            emojiPickerView.reloadData()
+        viewModel.onEmojiCategoriesUpdated = { [weak self] in
+            self?.emojiPickerView.reloadData()
         }
     }
     
