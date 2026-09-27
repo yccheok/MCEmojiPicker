@@ -79,7 +79,22 @@ final class MCEmojiPickerViewModel: MCEmojiPickerViewModelProtocol {
     /// Loaded once at init from the bundled cldrEmojiKeywords.json resource.
     /// Enables searching by aliases (e.g. "lettuce" → 🥬, "aubergine" → 🍆).
     private var cldrKeywords: [String: [String]] = {
-        guard let url = Bundle.module.url(forResource: "cldrEmojiKeywords", withExtension: "json"),
+        var resourceName = "cldrEmojiKeywords"
+        if let preferred = Locale.preferredLanguages.first {
+            let locale = Locale(identifier: preferred)
+            if locale.languageCode == "zh" {
+                let script = locale.scriptCode
+                let region = locale.regionCode
+                if script == "Hant" || region == "TW" || region == "HK" || region == "MO" {
+                    resourceName = "cldrEmojiKeywords-zh-Hant"
+                }
+            } else if locale.languageCode == "th" {
+                resourceName = "cldrEmojiKeywords-th"
+            }
+        }
+        
+        guard let url = Bundle.module.url(forResource: resourceName, withExtension: "json") ??
+                        Bundle.module.url(forResource: "cldrEmojiKeywords", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let decoded = try? JSONDecoder().decode([String: [String]].self, from: data)
         else { return [:] }
